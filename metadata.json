@@ -1,0 +1,5 @@
+{
+  "name": "MedSnap - Portafolio Clínico",
+  "description": "Sistema de registro fotográfico para pacientes con almacenamiento local y búsqueda en tiempo real. Desarrollado por lejosaco.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"]
+}

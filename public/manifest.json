@@ -1,0 +1,21 @@
+{
+  "name": "MedSnap - Gestión de Evidencias",
+  "short_name": "MedSnap",
+  "description": "Sistema clínico de gestión de evidencias fotográficas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0891b2",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/medsnap-icon/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/seed/medsnap-icon/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
