@@ -60,6 +60,7 @@ export default function App() {
   // --- Refs ---
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
@@ -227,6 +228,23 @@ export default function App() {
     return now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCapturedPhoto(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const openCamera = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const startCamera = async () => {
     try {
       setError(null);
@@ -268,7 +286,38 @@ export default function App() {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         setCapturedPhoto(dataUrl);
         stopCamera();
+        return dataUrl;
       }
+    }
+    return null;
+  };
+
+  const captureAndSave = () => {
+    if (!name.trim()) {
+      setError("Por favor, ingrese el nombre del paciente antes de capturar.");
+      // Scroll to name input
+      suggestionRef.current?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    const photo = takePhoto();
+    if (photo) {
+      const newRecord: PatientRecord = {
+        id: Date.now().toString(),
+        name: name.trim(),
+        date: getCurrentDate(),
+        time: getCurrentTime(),
+        status: "Salida voluntaria",
+        photo: photo
+      };
+
+      setRecords(prev => [newRecord, ...prev]);
+      setName('');
+      setCapturedPhoto(null);
+      setError(null);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      setActiveTab('history');
     }
   };
 
@@ -625,29 +674,54 @@ export default function App() {
                     </div>
                   </div>
 
-                    {/* Camera Section */}
-                    <div className="space-y-3 pt-4">
-                      <label className="text-xs font-bold text-clinical-500 uppercase tracking-widest ml-1">
-                        Evidencia Visual
-                      </label>
-                      
-                      {!isCameraActive && !capturedPhoto && !isCameraLoading && (
-                        <motion.button 
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          onClick={startCamera}
-                          className="w-full aspect-video bg-white/30 backdrop-blur-2xl border-2 border-dashed border-white/40 rounded-[3rem] flex flex-col items-center justify-center gap-5 text-clinical-400 hover:bg-white/50 hover:border-brand-500/40 hover:text-brand-600 transition-all group shadow-inner"
-                        >
-                          <div className="bg-white p-6 rounded-full shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-500 relative">
-                            <div className="absolute inset-0 bg-brand-500/10 rounded-full animate-ping group-hover:animate-none" />
-                            <Camera size={40} strokeWidth={1.5} className="text-brand-600 relative z-10" />
+                      {/* Camera Section */}
+                      <div className="space-y-3 pt-4">
+                        <label className="text-xs font-bold text-clinical-500 uppercase tracking-widest ml-1">
+                          Evidencia Visual
+                        </label>
+                        
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          capture="environment" 
+                          ref={fileInputRef} 
+                          onChange={handleCapture} 
+                          className="hidden" 
+                        />
+
+                        {!isCameraActive && !capturedPhoto && !isCameraLoading && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <motion.button 
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              onClick={startCamera}
+                              className="w-full aspect-video bg-brand-600 rounded-[3rem] flex flex-col items-center justify-center gap-4 text-white shadow-xl shadow-brand-500/30 hover:bg-brand-700 transition-all group"
+                            >
+                              <div className="bg-white/20 p-5 rounded-full backdrop-blur-md">
+                                <Camera size={32} strokeWidth={2.5} />
+                              </div>
+                              <div className="text-center">
+                                <span className="text-[11px] font-black uppercase tracking-widest">Cámara en Vivo</span>
+                                <p className="text-[9px] opacity-70 font-bold uppercase mt-1">Captura en tiempo real</p>
+                              </div>
+                            </motion.button>
+
+                            <motion.button 
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              onClick={openCamera}
+                              className="w-full aspect-video bg-white/50 backdrop-blur-xl border-2 border-dashed border-clinical-200 rounded-[3rem] flex flex-col items-center justify-center gap-4 text-clinical-500 hover:border-brand-500 hover:text-brand-600 transition-all group"
+                            >
+                              <div className="bg-clinical-100 p-5 rounded-full">
+                                <ImageIcon size={32} strokeWidth={2} />
+                              </div>
+                              <div className="text-center">
+                                <span className="text-[11px] font-black uppercase tracking-widest">App de Cámara</span>
+                                <p className="text-[9px] opacity-70 font-bold uppercase mt-1">Usa la cámara del móvil</p>
+                              </div>
+                            </motion.button>
                           </div>
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-[11px] font-black uppercase tracking-[0.25em] text-clinical-800 group-hover:text-brand-600 transition-colors">Activar Cámara Clínica</span>
-                            <span className="text-[9px] font-bold text-clinical-400 uppercase tracking-widest">Captura de evidencia fotográfica</span>
-                          </div>
-                        </motion.button>
-                      )}
+                        )}
 
                       {isCameraLoading && (
                         <div className="w-full aspect-video bg-clinical-100 rounded-[2rem] flex flex-col items-center justify-center gap-4 animate-pulse border border-clinical-200">
@@ -677,18 +751,19 @@ export default function App() {
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                          <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-6">
+                          <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-4 px-6">
                             <button 
-                              onClick={takePhoto}
-                              className="bg-white text-brand-600 p-5 rounded-full shadow-2xl active:scale-90 transition-transform hover:bg-brand-50"
+                              onClick={captureAndSave}
+                              className="flex-1 bg-white text-brand-600 py-4 rounded-2xl shadow-2xl font-black text-sm flex items-center justify-center gap-3 active:scale-95 transition-all hover:bg-brand-50"
                             >
-                              <Camera size={28} strokeWidth={2.5} />
+                              <Save size={20} strokeWidth={3} />
+                              CAPTURAR Y GUARDAR
                             </button>
                             <button 
                               onClick={stopCamera}
-                              className="bg-red-500 text-white p-5 rounded-full shadow-2xl active:scale-90 transition-transform hover:bg-red-600"
+                              className="bg-red-500 text-white p-4 rounded-2xl shadow-2xl active:scale-95 transition-all hover:bg-red-600"
                             >
-                              <Trash2 size={28} strokeWidth={2.5} />
+                              <Trash2 size={24} strokeWidth={2.5} />
                             </button>
                           </div>
                         </motion.div>
